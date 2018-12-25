@@ -1,0 +1,25 @@
+<div>
+  <p>
+    A collection <z>token</z> is used to verify a request has autorization to
+    access passwords.
+    <br><br>
+    You can access your <z>token</z> with:
+    <br>
+    sudo confidentalInfo.sh value COLLECTION_IDENTIFIER <z>token</z>
+    <br>
+    <br>
+    For instance your <z>token</z> for the confidentalInfo collection is: {{token}}
+    <br>
+    You must pass this <z>token</z> to your application in order to access you passwords.
+    <br>
+    <br>
+    If you want some additional security you can set <z>update</z>Tokens=true, within
+    a given collection and the application will update the token every time it
+    is requested.
+    <br>
+    <br>
+    <br>
+    <b>Note</b>: Tokens are special in that you do not have to set them. If you
+    request a <z>token</z> that does not exist. It will be generated.
+  </p>
+</div>

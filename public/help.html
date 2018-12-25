@@ -1,0 +1,63 @@
+<!-- root html file -->
+<!DOCTYPE html>
+<html style="min-height: 100%; position: relative;">
+  <head>
+    <meta charset="utf-8"/>
+    <title>Confidental Info Help</title>
+
+    <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.9/angular.min.js"></script>
+    <script src="/help.js"></script><!-- root js file -->
+
+    <link rel='stylesheet' href='/help.css'>
+  </head>
+  <!-- apply our angular app to our site -->
+  <body ng-app="passApp" ng-controller="passCtrl">
+    <div class='center two-thirds'>
+      <h2>Run with docker</h2>
+      <p>
+        The following commands will run the application within a docker
+        container
+      </p>
+      <div class='left'>
+        <div>
+          <b>{{dockerCommand}}</b>
+        </div>
+        <div>
+          <b>./run.sh</b>
+        </div>
+      </div>
+    </div>
+    <div class='center two-thirds'>
+      <h2>Terminal Commands</h2>
+      <p>
+        The files containing the data are encrypted and admin protected therefore
+        admin privaliges are required. This means the following commands will be
+        prefixed by:
+        <br>
+        <b>sudo confidentalInfo.sh...</b>
+      </p>
+      <div class='left'>
+        <div ng-repeat="cmd in cmds">
+          <b>{{cmd}}</b>
+        </div>
+      </div>
+    </div>
+    <div class='center two-thirds'>
+      <h2>Server Urls</h2>
+      <p id='test'>
+        These urls are secured with a token and are hosted by the same domain.
+        Meaning they are prefixed by:
+        <br>
+        {{domain}}
+      </p>
+      <div class='left'>
+        <div ng-repeat="url in urls">
+          <b>{{url}} </b>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

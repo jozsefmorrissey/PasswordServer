@@ -1,0 +1,17 @@
+<p>
+  This replaces passwords within a given file.
+  <br><br>
+  For example...
+  <br>
+  If the file ./prop.txt contains a line "dbPass=12345"
+  <br>
+  and
+  <br>
+  Within collection myApp it has the <b>key-value</b> password=12345.
+  <br>
+  Then after running...
+  <br>
+  sudo confidentalInfo.sh remove myApp password ./prop.txt
+  <br>
+  That line would be changed to "dbPass=_{password}_".
+</p>

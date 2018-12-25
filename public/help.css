@@ -1,0 +1,49 @@
+:root {
+  --primary-light: aquamarine;
+  --primary-dark: black;
+}
+
+.center {
+  text-align: center;
+  justify-content: center;
+}
+
+.left {
+  text-align: left;
+}
+
+.two-thirds {
+    width: 66%;
+    margin: auto;
+}
+
+.link {
+  color: blue;
+  font-style: italic;
+  text-decoration: underline;
+}
+
+.hover-outer {
+  background-color: white;
+  border-style: ridge;
+  border-color: var(--primary-light);
+  border-radius: 10pt;
+}
+
+.hover-inner {
+  padding: 10pt;
+}
+
+.warning {
+  color: red;
+}
+
+.hover-close-btn {
+  float: right;
+  margin: 5pt;
+  border-radius: 25pt;
+  font-weight: bolder;
+  color: var(--primary-light);
+  background-color: var(--primary-dark);
+  border-color: var(--primary-light);
+}
