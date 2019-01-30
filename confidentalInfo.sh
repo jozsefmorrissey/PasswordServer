@@ -13,27 +13,34 @@ else
   exit;
 fi
 
-password="amu0ohMihohQuoh3AuYo1aihiet9ei"
+if ! touch ./info/ 2>/dev/null;
+then
+  echo here
+  mkdir ./info/
+fi
+
+propFile="./passwordServer.properties"
+password=$(grep -oP "password=.*" $propFile | sed "s/.*=\(.*\)/\1/")
 relDir=$(echo "${BASH_SOURCE[0]}" | sed "s/confidentalInfo.sh//g")
 infoDir=${relDir}info/
-tempName="thahb9da7aegahpaic3ohKahchoube"
 tempExt='.txt'
 encryptExt='.des3'
 logId="log-history-unlikely-user-name"
 defaultPort=8080
+mapFile=$(grep -oP "mapFile=.*" $propFile | sed "s/.*=\(.*\)/\1/")
 
 log() {
   halfPart=$(echo -n -e "------------------------- ")
   oHalfPart=$(echo -n -e $halfPart | rev)
   d=$(date +%F_%H-%M-%S)
-  lg=$(echo -n -e "\n\n$d\n$halfPart $1:$2:$3 $oHalfPart\n$4")
+  lg=$(echo -n -e "\n\n$d\n$halfPart $1 $oHalfPart\n$2:$3\n$4")
   appendToFile "$logId" "$lg"
 }
 
 getFileName() {
   if [ $1 == 'infoMap' ]
   then
-    file='Heena6airooshahze8eeh2fohruu4c';
+    file=$mapFile;
   else
     file=$(getValue infoMap $1)
   fi
@@ -45,7 +52,7 @@ getFileName() {
 }
 
 getTempName () {
-  echo $(getFileName $1)$tempExt
+  echo $1'_temp'$tempExt
 }
 
 getEncryptName() {
@@ -93,12 +100,31 @@ setupTemp() {
   echo "$(decode $1)" > $tempName
 }
 
+getNewFileName() {
+  found=1
+  newName=here
+  while [ $found == 1 ]
+  do
+    found=0
+    newName=$(pwgen 30 1)
+    filenames=$(ls ./info/)
+    for filename in $filenames
+    do
+      if [ "$newName$encryptExt" == "$filename" ]
+      then
+        found=1
+      fi
+    done
+  done
+  echo $newName
+}
+
 mapFile() {
   getValue infoMap "$1"
   filename=$(getValue infoMap "$1")
   if [[ -z $filename ]] && [ $1 != "infoMap" ]
   then
-    genValue=$(pwgen 30 1)
+    genValue=$(getNewFileName)
     filename="$genValue"
     touch $infoDir$filename$encryptExt
     appendToFile "infoMap" "$1=$filename"
@@ -122,6 +148,7 @@ viewFile() {
   oldContents=$(cat $temporaryName)
   editor=gedit
   $(eval "$editor $temporaryName")
+  rm "$temporaryName"
 }
 
 appendToFile () {
@@ -139,6 +166,7 @@ update () {
     tempFileName=$(getTempName "$1")
 
     setupTemp "$1"
+    old=$(grep -oP "$2=.*" $tempFileName | sed "s/.*=\(.*\)/\1/")
     sed -i "s/$2=.*//g" $tempFileName
     log "$1" "$2" "$old" "Updated"
     saveAndRemoveTemp $1
@@ -183,10 +211,6 @@ getWithToken() {
   token=$(getValue $1 token)
   if [ "$token" == "$3" ];then
     value=$(getValue $1 $2)
-    # password=$(getValue $1 passSalt)
-    # encrypted=$(${relDir}jasypt-1.9.2/bin/encrypt.sh algorithm=PBEWithMD5AndDES input="$input" password="$password" |
-    #   tr "\n" " " |
-    #   sed "s/\(\(.*----OUTPUT----\)\|\([- \t]\)\)//g")
     echo $value
   else
     echo Your not supposed to be here...
@@ -217,6 +241,25 @@ openHelpDoc() {
   url="xdg-open http://localhost:$port/help.html";
   echo -e "URL:\n\t"$url"\n"
   su jozsef -c "$url"
+}
+
+areYouSure() {
+  echo -e "$1"
+  read -p "" yes
+  echo $yes
+  if [ "$yes" != "YES" ]
+  then
+    exit
+  fi
+}
+
+generateProperties() {
+  areYouSure "Are you sure you want to regnerate Properties?(YES to proceed)\nAll Passwords will be lost."
+  areYouSure "Seriosly there is no going back.... You have been warned?(YES to proceed)"
+  rm $propFile
+  pass=$(pwgen 30)
+  mapFile=$(pwgen 30)
+  echo -e "password=$pass\nmapFile=$mapFile" > $propFile
 }
 
 case "$1" in
@@ -275,5 +318,8 @@ case "$1" in
   ;;
   defaultPort)
     echo $defaultPort
+  ;;
+  generateProperties)
+    generateProperties
   ;;
 esac
