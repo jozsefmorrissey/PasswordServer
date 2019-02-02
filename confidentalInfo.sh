@@ -3,31 +3,17 @@
 # All functions will deal with the same following properties
 #   @$1 - String Id
 #   @$2 - Property Key
-
-source ./debugLogger.sh
-
-if  touch /usr/test.txt 2>/dev/null; then
-    rm /usr/test.txt
-else
-  echo Must have admin privaliges to run this application.
-  exit;
-fi
-
-if ! touch ./info/ 2>/dev/null;
-then
-  echo here
-  mkdir ./info/
-fi
-
-propFile="./passwordServer.properties"
-password=$(grep -oP "password=.*" $propFile | sed "s/.*=\(.*\)/\1/")
 relDir=$(echo "${BASH_SOURCE[0]}" | sed "s/confidentalInfo.sh//g")
 infoDir=${relDir}info/
+propFile=${relDir}passwordServer.properties
+password=$(grep -oP "password=.*" $propFile | sed "s/.*=\(.*\)/\1/")
 tempExt='.txt'
 encryptExt='.des3'
 logId="log-history-unlikely-user-name"
 defaultPort=8080
 mapFile=$(grep -oP "mapFile=.*" $propFile | sed "s/.*=\(.*\)/\1/")
+# source ${relDir}/debugLogger.sh
+source ${relDir}/commandParser.sh
 
 log() {
   halfPart=$(echo -n -e "------------------------- ")
@@ -52,7 +38,7 @@ getFileName() {
 }
 
 getTempName () {
-  echo $1'_temp'$tempExt
+  echo $relDir/sd/$1'_temp'$tempExt
 }
 
 getEncryptName() {
@@ -107,7 +93,7 @@ getNewFileName() {
   do
     found=0
     newName=$(pwgen 30 1)
-    filenames=$(ls ./info/)
+    filenames=$(ls $relDir/info/)
     for filename in $filenames
     do
       if [ "$newName$encryptExt" == "$filename" ]
@@ -141,14 +127,19 @@ saveAndRemoveTemp () {
   rm $tempName
 }
 
+cleanFile() {
+  sed -i '/^[[:space:]]*$/d' $1
+  sort $1 > ${1}_ && cp ${1}_ $1 && rm ${1}_
+}
+
 viewFile() {
   filename=$(mapFile "$1")
   temporaryName=$(getTempName "$1")
   setupTemp "$1"
-  oldContents=$(cat $temporaryName)
+  cleanFile "$temporaryName"
   editor=gedit
   $(eval "$editor $temporaryName")
-  rm "$temporaryName"
+  rm "$temporary"
 }
 
 appendToFile () {
@@ -262,64 +253,166 @@ generateProperties() {
   echo -e "password=$pass\nmapFile=$mapFile" > $propFile
 }
 
-case "$1" in
-  replace)
-    replace $2 $3 $4
-  ;;
-  remove)
-    remove $2 $3 $4
-  ;;
-  edit)
-    oldContents=$(viewFile "$2")
-    log $2 "" "" "$oldContents"
-    saveAndRemoveTemp "$2"
-  ;;
-  value)
-    getValue "$2" "$3"
-  ;;
-  append)
-    appendToFile "$2" "$3"
-  ;;
-  update)
-    update "$2" "$3" "$4"
-  ;;
-  map)
-    mapFile "$2"
-  ;;
-  view)
-    viewFile "$2"
-  ;;
-  --help)
-    openHelpDoc "$2"
-  ;;
-  -help)
-    openHelpDoc "$2"
-  ;;
-  help)
-    openHelpDoc "$2"
-  ;;
-  log)
-    $oldContents=$(viewFile "$logId")
-    saveAndRemoveTemp "$logId"
-  ;;
-  start-server)
-    startServer $2
-  ;;
-  stop-server)
-    port=$(determinePort $2)
-    sudo kill -9 $(getServerPid $port)
-  ;;
-  setup-server)
-    update "$2" "$3" "$4"
-    update "$2" "token"
-  ;;
-  getWithToken)
-    getWithToken "$2" "$3" "$4"
-  ;;
-  defaultPort)
-    echo $defaultPort
-  ;;
-  generateProperties)
-    generateProperties
-  ;;
-esac
+adminCheck() {
+  if  touch /usr/test.txt 2>/dev/null; then
+      rm /usr/test.txt
+  else
+    echo Must have admin privaliges to run this application.
+    if [ "$1" != "true" ]
+    then
+      exit
+    fi
+  fi
+}
+
+selfDistruct() {
+  t=60
+  if [ ! -z $2 ]
+  then
+    t=$2
+  fi
+  filepath=$(getTempName "$1")
+  setupTemp "$1"
+  sleep $t && rm $filepath &
+}
+
+naFp() {
+  echo $relDir/na/$1.txt
+}
+
+valueNonAdmin() {
+  adminErr=$(adminCheck "true")
+  if [ ! -z "$adminErr" ]
+  then
+    filepathSd=$(getTempName "$1")
+    filepathNa=$(naFp "$1")
+    valSd=$(grep -oP "$2=.*" $filepathSd 2>/dev/null | sed "s/$2=\(.*\)/\1/")
+    valNa=$(grep -oP "$2=.*" $filepathNa 2>/dev/null | sed "s/$2=\(.*\)/\1/")
+    [ ! -z $valSd ] && [ ! -z $valNa ] &&
+      echo 'There is a secure and insecure Property with the same collection and identifier. One of these needs to be renamed' &&
+      exit
+
+    [ -z $valSd ] && [ -z $valNa ] && [ "$1" == "" ] && sudo confidentalInfo.sh value "$@" && exit
+
+    [ ! -z $valNa ] && echo $valNa && exit
+
+    echo $valSd && exit
+  fi
+}
+
+updateNonAdmin() {
+  adminErr=$(adminCheck "true")
+  if [ ! -z "$adminErr" ]
+  then
+    val=$3
+    if [ -z $val ]
+    then
+      val=$(pwgen 30 1)
+    fi
+    filepath=$(naFp $1)
+    mkdir -p $(dirname $filepath)
+    sed -i "s/$2=.*//" $filepath
+    echo $2=$val >> $filepath
+    cleanFile $filepath
+    exit
+  fi
+}
+
+insecureFunctions() {
+  case "$1" in
+    value)
+      valueNonAdmin "$2" "$3"
+    ;;
+    update)
+      updateNonAdmin "$2" "$3" "$4"
+    ;;
+    --help)
+      openHelpDoc "$2"
+    ;;
+    -help)
+      openHelpDoc "$2"
+    ;;
+    help)
+      openHelpDoc "$2"
+    ;;
+    getWithToken)
+      getWithToken "$2" "$3" "$4"
+    ;;
+    retTemp)
+      retTemp "$2" "$3"
+    ;;
+  esac
+}
+
+secureFunctions() {
+  case "$1" in
+    replace)
+      adminCheck
+      replace $2 $3 $4
+    ;;
+    remove)
+      adminCheck
+      remove $2 $3 $4
+    ;;
+    edit)
+      adminCheck
+      oldContents=$(viewFile "$2")
+      log $2 "" "" "$oldContents"
+      saveAndRemoveTemp "$2"
+    ;;
+    value)
+      adminCheck
+      getValue "$2" "$3"
+    ;;
+    append)
+      adminCheck
+      appendToFile "$2" "$3"
+    ;;
+    update)
+      adminCheck
+      update "$2" "$3" "$4"
+    ;;
+    map)
+      adminCheck
+      mapFile "$2"
+    ;;
+    view)
+      adminCheck
+      viewFile "$2"
+    ;;
+    generateProperties)
+      adminCheck
+      generateProperties
+    ;;
+    setup-server)
+      adminCheck
+      update "$2" "$3" "$4"
+      update "$2" "token"
+    ;;
+    log)
+      adminCheck
+      $oldContents=$(viewFile "$logId")
+      saveAndRemoveTemp "$logId"
+    ;;
+    start-server)
+      adminCheck
+      startServer $2
+    ;;
+    stop-server)
+      echo cases
+      adminCheck
+      port=$(determinePort $2)
+      sudo kill -9 $(getServerPid $port)
+    ;;
+    defaultPort)
+      adminCheck
+      determinePort $2
+    ;;
+    selfDistruct)
+      selfDistruct "$2" "$3"
+    ;;
+  esac
+}
+
+insecureFunctions "$@"
+secureFunctions "$@"

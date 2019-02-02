@@ -22,7 +22,7 @@ app.post("/password/get", function(req, res){
   const gi = req.body.collectionIdentifier;
   const pi = req.body.passwordIdentifier;
   const token = req.body.token;
-  const cmd = 'sudo confidentalInfo.sh getWithToken "' + gi + '" "' + pi + '" "' + token + '"';
+  const cmd = 'confidentalInfo.sh getWithToken "' + gi + '" "' + pi + '" "' + token + '"';
   const password = shell.exec(cmd);
   // shell.exec('clear')
   res.send(password.replace("\n", ""));
