@@ -22,9 +22,15 @@ app.post("/password/get", function(req, res){
   const gi = req.body.collectionIdentifier;
   const pi = req.body.passwordIdentifier;
   const token = req.body.token;
-  const cmd = 'confidentalInfo.sh getWithToken "' + gi + '" "' + pi + '" "' + token + '"';
-  const password = shell.exec(cmd);
-  // shell.exec('clear')
+
+  let cmd = `confidentalInfo.sh value ${gi} ${pi} -a`;
+  let password = shell.exec(cmd);
+
+  if (password.indexOf('[Error:CI]') > -1) {
+    cmd = `confidentalInfo.sh getWithToken ${gi} ${pi} ${token}`;
+    password = shell.exec(cmd);
+  }
+
   res.send(password.replace("\n", ""));
 });
 

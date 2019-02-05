@@ -3,17 +3,17 @@
 # All functions will deal with the same following properties
 #   @$1 - String Id
 #   @$2 - Property Key
-relDir=$(echo "${BASH_SOURCE[0]}" | sed "s/confidentalInfo.sh//g")
-infoDir=${relDir}info/
-propFile=${relDir}passwordServer.properties
+passServRelDir=$(dirname "${BASH_SOURCE[0]}")
+source ${passServRelDir}/BashScripts/debugLogger.sh
+
+infoDir=${passServRelDir}/info/
+propFile=${passServRelDir}/passwordServer.properties
 password=$(grep -oP "password=.*" $propFile | sed "s/.*=\(.*\)/\1/")
 tempExt='.txt'
 encryptExt='.des3'
 logId="log-history-unlikely-user-name"
 defaultPort=8080
 mapFile=$(grep -oP "mapFile=.*" $propFile | sed "s/.*=\(.*\)/\1/")
-# source ${relDir}/debugLogger.sh
-source ${relDir}/commandParser.sh
 
 log() {
   halfPart=$(echo -n -e "------------------------- ")
@@ -38,7 +38,7 @@ getFileName() {
 }
 
 getTempName () {
-  echo $relDir/sd/$1'_temp'$tempExt
+  echo $passServRelDir/sd/$1'_temp'$tempExt
 }
 
 getEncryptName() {
@@ -93,7 +93,7 @@ getNewFileName() {
   do
     found=0
     newName=$(pwgen 30 1)
-    filenames=$(ls $relDir/info/)
+    filenames=$(ls $passServRelDir/info/)
     for filename in $filenames
     do
       if [ "$newName$encryptExt" == "$filename" ]
@@ -204,7 +204,7 @@ getWithToken() {
     value=$(getValue $1 $2)
     echo $value
   else
-    echo Your not supposed to be here...
+    echo '[Error:CI] Your not supposed to be here...'
   fi
 }
 
@@ -217,7 +217,7 @@ startServer() {
   serverPid=$(getServerPid $port)
   confInfoToken=$(getValue confidentalInfo token)
   if [ -z $serverPid ]; then
-    node ${relDir}password-server.js $port $confInfoToken 1>/dev/null &
+    node ${passServRelDir}/password-server.js $port $confInfoToken 1>/dev/null &
     echo Password server running on port: $port
   fi
 }
@@ -277,27 +277,36 @@ selfDistruct() {
 }
 
 naFp() {
-  echo $relDir/na/$1.txt
+  echo $passServRelDir/na/$1.txt
+}
+
+
+toJson() {
+  filepathNa=$(naFp "$1")
+  properties=$(grep -oP "^.{1,}" $filepathNa)
+  json="{\n"$(echo "$properties" | sed 's/\(.*\?\)=\(.*\)/\t\"\1\": "\2",/g')"\n"
+  echo -e "${json:0:-3}\n}"
+
 }
 
 valueNonAdmin() {
-  adminErr=$(adminCheck "true")
-  if [ ! -z "$adminErr" ]
-  then
-    filepathSd=$(getTempName "$1")
-    filepathNa=$(naFp "$1")
-    valSd=$(grep -oP "$2=.*" $filepathSd 2>/dev/null | sed "s/$2=\(.*\)/\1/")
-    valNa=$(grep -oP "$2=.*" $filepathNa 2>/dev/null | sed "s/$2=\(.*\)/\1/")
-    [ ! -z $valSd ] && [ ! -z $valNa ] &&
-      echo 'There is a secure and insecure Property with the same collection and identifier. One of these needs to be renamed' &&
-      exit
+  filepathSd=$(getTempName "$1")
+  filepathNa=$(naFp "$1")
+  valSd=$(grep -oP "$2=.*" $filepathSd 2>/dev/null | sed "s/$2=\(.*\)/\1/")
+  valNa=$(grep -oP "$2=.*" $filepathNa 2>/dev/null | sed "s/$2=\(.*\)/\1/")
+  [ ! -z $valSd ] && [ ! -z $valNa ] &&
+    debug warn 'There is a secure and insecure Property with the same collection and identifier. One of these needs to be renamed'
 
-    [ -z $valSd ] && [ -z $valNa ] && [ "$1" == "" ] && sudo confidentalInfo.sh value "$@" && exit
+  [ -z $valSd ] && [ -z $valNa ] && [ "${booleans[a]}" != "true" ] &&
+    adminCheck && getValue "$1" "$2" && exit
+  # debug fatal "$valSd : $valNa" - $filepathNa
+  [ ! -z $valNa ] && echo $valNa && exit
 
-    [ ! -z $valNa ] && echo $valNa && exit
+  [ ! -z $valSd ] && echo $valSd && exit
 
-    echo $valSd && exit
-  fi
+  debug info "Property not found $1 - $2"
+  echo "[Error:CI] Property '$2' not found. - You may need to run selfDistruct with admin privaliges before execution."
+  exit
 }
 
 updateNonAdmin() {
@@ -311,7 +320,7 @@ updateNonAdmin() {
     fi
     filepath=$(naFp $1)
     mkdir -p $(dirname $filepath)
-    sed -i "s/$2=.*//" $filepath
+    sed -i "s/^$2=.*//" $filepath
     echo $2=$val >> $filepath
     cleanFile $filepath
     exit
@@ -341,6 +350,9 @@ insecureFunctions() {
     retTemp)
       retTemp "$2" "$3"
     ;;
+    toJson)
+      toJson "$2"
+    ;;
   esac
 }
 
@@ -359,10 +371,6 @@ secureFunctions() {
       oldContents=$(viewFile "$2")
       log $2 "" "" "$oldContents"
       saveAndRemoveTemp "$2"
-    ;;
-    value)
-      adminCheck
-      getValue "$2" "$3"
     ;;
     append)
       adminCheck
@@ -399,7 +407,6 @@ secureFunctions() {
       startServer $2
     ;;
     stop-server)
-      echo cases
       adminCheck
       port=$(determinePort $2)
       sudo kill -9 $(getServerPid $port)
