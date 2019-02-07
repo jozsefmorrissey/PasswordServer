@@ -139,7 +139,6 @@ viewFile() {
   cleanFile "$temporaryName"
   editor=gedit
   $(eval "$editor $temporaryName")
-  rm "$temporary"
 }
 
 appendToFile () {
@@ -292,17 +291,16 @@ toJson() {
 valueNonAdmin() {
   filepathSd=$(getTempName "$1")
   filepathNa=$(naFp "$1")
-  valSd=$(grep -oP "$2=.*" $filepathSd 2>/dev/null | sed "s/$2=\(.*\)/\1/")
-  valNa=$(grep -oP "$2=.*" $filepathNa 2>/dev/null | sed "s/$2=\(.*\)/\1/")
+  valSd=$(grep -oP "^$2=.*" $filepathSd 2>/dev/null | sed "s/^$2=\(.*\)/\1/")
+  valNa=$(grep -oP "^$2=.*" $filepathNa 2>/dev/null | sed "s/^$2=\(.*\)/\1/")
   [ ! -z $valSd ] && [ ! -z $valNa ] &&
     debug warn 'There is a secure and insecure Property with the same collection and identifier. One of these needs to be renamed'
 
-  [ -z $valSd ] && [ -z $valNa ] && [ "${booleans[a]}" != "true" ] &&
-    adminCheck && getValue "$1" "$2" && exit
+  [ -z "$valSd" ] && [ -z "$valNa" ] && [ "${booleans[a]}" != "true" ] && adminCheck && getValue "$1" "$2" && exit
   # debug fatal "$valSd : $valNa" - $filepathNa
-  [ ! -z $valNa ] && echo $valNa && exit
+  [ ! -z "$valNa" ] && echo $valNa && debug info "Insecure value returned" && exit
 
-  [ ! -z $valSd ] && echo $valSd && exit
+  [ ! -z "$valSd" ] && echo $valSd && debug info "Secure value returned" && exit
 
   debug info "Property not found $1 - $2"
   echo "[Error:CI] Property '$2' not found. - You may need to run selfDistruct with admin privaliges before execution."
@@ -387,6 +385,8 @@ secureFunctions() {
     view)
       adminCheck
       viewFile "$2"
+      temporaryName=$(getTempName "$1")
+      rm "$temporaryName"
     ;;
     generateProperties)
       adminCheck
