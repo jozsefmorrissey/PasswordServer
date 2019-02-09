@@ -1,0 +1,3 @@
+[submodule "BashScripts"]
+	path = BashScripts
+	url = https://github.com/jozsefmorrissey/BashScripts.git
