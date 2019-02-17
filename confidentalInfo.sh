@@ -6,7 +6,8 @@
 passServRelDir=$(dirname "${BASH_SOURCE[0]}")
 source ${passServRelDir}/BashScripts/debugLogger.sh
 
-infoDir=${passServRelDir}/info/
+dataDir=~/.opsc/PasswordServer
+infoDir=$dataDir/info/
 propFile=${passServRelDir}/passwordServer.properties
 password=$(grep -oP "password=.*" $propFile | sed "s/.*=\(.*\)/\1/")
 tempExt='.txt'
@@ -31,6 +32,7 @@ getFileName() {
     file=$(getValue infoMap $1)
   fi
 
+  debug debug "$file"
   if [ "$file" ]
   then
     echo $infoDir$file
@@ -38,7 +40,7 @@ getFileName() {
 }
 
 getTempName () {
-  echo $passServRelDir/sd/$1'_temp'$tempExt
+  echo $dataDir/sd/$1'_temp'$tempExt
 }
 
 getEncryptName() {
@@ -216,7 +218,7 @@ startServer() {
   serverPid=$(getServerPid $port)
   confInfoToken=$(getValue confidentalInfo token)
   if [ -z $serverPid ]; then
-    node ${passServRelDir}/password-server.js $port $confInfoToken 1>/dev/null &
+    node ${passServRelDir}/password-server.js $port $confInfoToken
     echo Password server running on port: $port
   fi
 }
@@ -276,7 +278,7 @@ selfDistruct() {
 }
 
 naFp() {
-  echo $passServRelDir/na/$1.txt
+  echo $dataDir/na/$1.txt
 }
 
 
@@ -327,6 +329,9 @@ updateNonAdmin() {
 
 insecureFunctions() {
   case "$1" in
+    dir)
+      echo $passServRelDir
+    ;;
     value)
       valueNonAdmin "$2" "$3"
     ;;

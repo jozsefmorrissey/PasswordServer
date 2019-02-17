@@ -8,7 +8,6 @@ app.use(bodyParser.json()); // support json encoded bodies
 app.use(bodyParser.urlencoded({ extended: true }));
 
 const port = process.argv[2];
-const confToken = process.argv[3];
 
 const ipFilter = require('./ipConfig.json');
 var out = "";
@@ -49,6 +48,4 @@ app.get("/dockerCommand", function (req, res) {
   res.send(dockerCommand);
 });
 
-app.get("/token", function (req, res) {
-  res.send(confToken);
-});
+console.log(`Server Running on Port: ${port}`)
