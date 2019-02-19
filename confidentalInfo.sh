@@ -95,7 +95,7 @@ getNewFileName() {
   do
     found=0
     newName=$(pwgen 30 1)
-    filenames=$(ls $passServRelDir/info/)
+    filenames=$(ls $dataDir/info/)
     for filename in $filenames
     do
       if [ "$newName$encryptExt" == "$filename" ]
