@@ -3,7 +3,6 @@ dataHome=~/.opsc/PasswordServer/
 mkdir -p $dataHome/info/
 mkdir -p $dataHome/na/
 mkdir -p $dataHome/sd/
-chmod $dataHome/info/
 chmod 777 $dataHome/na/
 chmod 777 $dataHome/sd/
 
