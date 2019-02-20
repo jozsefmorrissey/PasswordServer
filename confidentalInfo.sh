@@ -291,6 +291,7 @@ toJson() {
 }
 
 valueNonAdmin() {
+  debug trace "$(sepArguments "Argurments: " ", " "$@")"
   filepathSd=$(getTempName "$1")
   filepathNa=$(naFp "$1")
   valSd=$(grep -oP "^$2=.*" $filepathSd 2>/dev/null | sed "s/^$2=\(.*\)/\1/")
@@ -298,7 +299,7 @@ valueNonAdmin() {
   [ ! -z $valSd ] && [ ! -z $valNa ] &&
     debug warn 'There is a secure and insecure Property with the same collection and identifier. One of these needs to be renamed'
 
-  [ -z "$valSd" ] && [ -z "$valNa" ] && [ "${booleans[a]}" != "true" ] && adminCheck && getValue "$1" "$2" && exit
+  [ -z "$valSd" ] && [ -z "$valNa" ] && [ "${booleans[a]}" != "true" ] && getValue "$1" "$2" && exit
   # debug fatal "$valSd : $valNa" - $filepathNa
   [ ! -z "$valNa" ] && echo $valNa && debug info "Insecure value returned" && exit
 
