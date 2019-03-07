@@ -32,7 +32,7 @@ getFileName() {
     file=$(getValue infoMap $1)
   fi
 
-  debug debug "$file"
+  Logger debug "$file"
   if [ "$file" ]
   then
     echo $infoDir$file
@@ -291,21 +291,21 @@ toJson() {
 }
 
 valueNonAdmin() {
-  debug trace "$(sepArguments "Argurments: " ", " "$@")"
+  Logger trace "$(sepArguments "Argurments: " ", " "$@")"
   filepathSd=$(getTempName "$1")
   filepathNa=$(naFp "$1")
   valSd=$(grep -oP "^$2=.*" $filepathSd 2>/dev/null | sed "s/^$2=\(.*\)/\1/")
   valNa=$(grep -oP "^$2=.*" $filepathNa 2>/dev/null | sed "s/^$2=\(.*\)/\1/")
   [ ! -z $valSd ] && [ ! -z $valNa ] &&
-    debug warn 'There is a secure and insecure Property with the same collection and identifier. One of these needs to be renamed'
+    Logger warn 'There is a secure and insecure Property with the same collection and identifier. One of these needs to be renamed'
 
   [ -z "$valSd" ] && [ -z "$valNa" ] && [ "${booleans[a]}" != "true" ] && getValue "$1" "$2" && exit
-  # debug fatal "$valSd : $valNa" - $filepathNa
-  [ ! -z "$valNa" ] && echo $valNa && debug info "Insecure value returned" && exit
+  # Logger fatal "$valSd : $valNa" - $filepathNa
+  [ ! -z "$valNa" ] && echo $valNa && Logger info "Insecure value returned" && exit
 
-  [ ! -z "$valSd" ] && echo $valSd && debug info "Secure value returned" && exit
+  [ ! -z "$valSd" ] && echo $valSd && Logger info "Secure value returned" && exit
 
-  debug info "Property not found $1 - $2"
+  Logger info "Property not found $1 - $2"
   echo "[Error:CI] Property '$2' not found. - You may need to run selfDistruct with admin privaliges before execution."
   exit
 }
